@@ -1,8 +1,14 @@
 """
 Human-in-the-Loop web UI for tg-proxy.
 
-Adapted from ts_proxy. Launches a local web server on port 1143
-that shows the action payload for review. User can edit, approve, or reject.
+Adapted from ts_proxy. Launches a local web server on an OS-assigned free port
+(see `_find_free_port()`) that shows the action payload for review. The user can
+edit the payload, add a comment, then approve or reject. The chosen port is printed
+with the review URL on every invocation, so it is never guessed by the caller.
+
+A fixed port is deliberately NOT used: two concurrent `tg-proxy do` invocations
+would collide on it, and the second HITL server would fail to bind. Binding to
+port 0 lets the kernel hand out a guaranteed-free port instead.
 
 100% Web UI — no TUI fallback. If no browser, the URL is printed for SSH/GUI access.
 """
@@ -202,7 +208,6 @@ async def request_approval(
     port = _find_free_port()
     server = HTTPServer(("127.0.0.1", port), HITLServer)
     url = f"http://127.0.0.1:{port}/review?id={req_id}"
-
     print("\n🚀 [HITL] ACTION REVIEW REQUIRED")
     print(f"🔗 {url}")
     print(f"📝 Action: {func_name}")

@@ -239,7 +239,9 @@ Examples:
 **Human-in-the-Loop is REQUIRED for sensitive operations.** The HITL system is:
 
 - **100% Web UI** — no TUI fallback, no passphrase, no tmux requirement
-- On HITL command, a local web server starts on port 1143
+- On HITL command, a local web server starts on an OS-assigned free port (bind to port 0, never a
+  fixed port — two concurrent `do` invocations would otherwise collide); the port is printed with
+  the review URL
 - Browser auto-opens with the review page
 - The page shows: action name, payload (editable), comment field
 - User can: edit payload, add comment, approve, or reject
@@ -248,7 +250,7 @@ Examples:
 **HITL flow:**
 ```
 1. User/Agent runs: tg-proxy do bot-send '{"bot":"@bot","message":"Hello"}'
-2. HITL server starts on http://127.0.0.1:1143/review?id=xxx
+2. HITL server starts on http://127.0.0.1:<free-port>/review?id=xxx  (port assigned by the OS)
 3. Browser opens (or user clicks URL printed to stdout)
 4. Page shows:
    ┌────────────────────────────────┐

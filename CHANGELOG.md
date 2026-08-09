@@ -1,5 +1,41 @@
 # Changelog
 
+## 1.1.1 (2026-08-09)
+
+### Truth-in-documentation pass: version desync + HITL port docs corrected
+
+Found while `tg-proxy` was being read as the ADN reference for the new `tick-proxy` project
+(`$HOME/KpihX-Labs/tick_proxy/`). Both were pre-existing inconsistencies between code and docs.
+
+- **Version desync fixed:** `pyproject.toml` still declared `version = "1.0.0"` while `CHANGELOG.md`
+  documented 1.1.0 as released — so the installed binary reported `tg-proxy v1.0.0` and any
+  `uv build` / `uv publish` would have shipped the wrong version number. `pyproject.toml` is now the
+  truth again (`1.1.1`, this entry). Verified end-to-end: `make uv-install` → `tg-proxy --version`.
+- **HITL port documentation corrected (4 files + 1 docstring):** `AGENTS.md`, `CONTRACT.md` (×2),
+  `README.md` and the `hitl.py` module docstring all claimed the HITL web UI listens on a **fixed
+  port 1143**. The code has always bound an **OS-assigned free port** via `_find_free_port()`
+  (`bind(("", 0))`). The docs now describe the real behavior and, more importantly, explain **why**
+  a fixed port is deliberately avoided: two concurrent `tg-proxy do` invocations would collide on it
+  and the second HITL server would fail to bind. The chosen port is printed with the review URL on
+  every invocation, so callers never need to guess it.
+- **Workspace debris removed:** stale editor backups `src/tg_proxy/cli.py~` (32 KB, 2026-07-26) and
+  `src/tg_proxy/client.py~` (40 KB, 2026-07-26) moved out of the package directory to `/tmp`
+  (preserved as `.bak`, never deleted — kernel `.bak` rule). They were gitignored but still sat
+  inside `src/tg_proxy/`, polluting the package tree and matching content greps.
+- **Command count corrected in `README.md`:** the `do` section header claimed **23 commands** while
+  its own table already listed **24** rows and the CLI registers **24** actions
+  (`bot-create`, `bot-delete`, `bot-info`, `bot-list`, `bot-photo`, `bot-send`, `bot-send-file`,
+  `bot-token`, `chat-delete`, `chat-delete-messages`, `chat-download`, `chat-list`, `chat-move`,
+  `chat-read`, `chat-send`, `chat-send-file`, `folder-delete`, `folder-list`, `folder-set`, `raw`,
+  `updates`, `webhook-del`, `webhook-get`, `webhook-set`). The undercount came from
+  `chat-delete-messages`, whose `@app_do.command(...)` decorator is split across three lines
+  (`cli.py:670-672`) and is therefore invisible to single-line greps — exactly the trap that
+  produced the stale "23". Header now says 24, matching both the table and the runtime.
+- **Verified:** `make check` → 25 tests passed, pyright 0 errors, CLI smoke passed;
+  `tg-proxy --version` → `1.1.1` after `make uv-install`; `tg-proxy do --help` lists exactly 24
+  actions; `_find_free_port()` returns 5 distinct high ports across successive calls; no `1143`
+  reference remains in any source or documentation file.
+
 ## 1.1.0 (2026-07-26)
 
 ### Production hardening: type_hints, autosave refactor, dead code removal

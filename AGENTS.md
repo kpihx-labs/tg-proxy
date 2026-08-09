@@ -48,7 +48,7 @@ Meta options (only for do): `--output-file/-o <path>`, `--format/-f json|table`,
 
 ## HITL
 
-100% Web UI on port 1143. Required for: admin setup, bot-token, bot-create, bot-delete, bot-send, bot-send-file.
+100% Web UI on an OS-assigned free port (bind to port 0 — printed with the review URL, never fixed, so concurrent `do` invocations cannot collide). Required for: admin setup, bot-token, bot-create, bot-delete, bot-send, bot-send-file.
 
 ## Output
 

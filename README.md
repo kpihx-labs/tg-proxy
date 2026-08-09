@@ -18,7 +18,7 @@ tg-proxy do <action> [payload|file]  # RPC actions (JSON default, table via --fo
 | `setup` | First-time auth via HITL web form (creates `~/.config/tg-proxy/.env`) |
 | `status` | Your Telegram identity as JSON |
 
-### `tg-proxy do` (RPC) — 23 commands
+### `tg-proxy do` (RPC) — 24 commands
 
 | Action | Description | HITL | Enriched |
 |--------|-------------|:----:|:--------:|
@@ -148,7 +148,7 @@ ls -la ~/.config/tg-proxy/
 
 ## HITL
 
-Human-in-the-Loop via local web UI (port 1143). Sensitive operations open a browser page showing the payload for review, editing, and approval/rejection.
+Human-in-the-Loop via local web UI on an OS-assigned free port (the port is printed with the review URL — it is never fixed, so two concurrent `do` invocations cannot collide on it). Sensitive operations open a browser page showing the payload for review, editing, and approval/rejection.
 
 ## Output format
 
