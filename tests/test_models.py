@@ -1,12 +1,25 @@
 """Tests for tg_proxy.models."""
 
 from tg_proxy.models import (
-    BotListPayload, BotInfoPayload, BotTokenPayload, BotCreatePayload, BotCreateItem,
-    BotDeletePayload, BotSendPayload, BotSendFilePayload,
-    ChatListPayload, ChatReadPayload, ChatSendPayload, ChatSendFilePayload,
-    ChatDownloadPayload, UpdatesPayload,
-    WebhookGetPayload, WebhookSetPayload, WebhookDelPayload,
-    Output, OutputMeta,
+    BotCreateItem,
+    BotCreatePayload,
+    BotDeletePayload,
+    BotInfoPayload,
+    BotListPayload,
+    BotSendFilePayload,
+    BotSendPayload,
+    BotTokenPayload,
+    ChatDownloadPayload,
+    ChatListPayload,
+    ChatReadPayload,
+    ChatSendFilePayload,
+    ChatSendPayload,
+    Output,
+    OutputMeta,
+    UpdatesPayload,
+    WebhookDelPayload,
+    WebhookGetPayload,
+    WebhookSetPayload,
 )
 
 

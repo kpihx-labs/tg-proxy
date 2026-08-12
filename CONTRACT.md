@@ -18,7 +18,7 @@
 
 ```
 tg-proxy do <action> [payload|file] [--meta-options]     # RPC style — flat actions, JSON payload (inline or file)
-tg-proxy admin <action>                                   # Admin — setup (HITL), status, contacts (ALWAYS JSON)
+tg-proxy admin <action>                                   # Admin — setup/status/reset/purge (ALWAYS JSON)
 ```
 
 ### `tg-proxy admin` — Admin (Telethon, ALWAYS JSON to stdout — hardcoded, no --format)
@@ -26,7 +26,9 @@ tg-proxy admin <action>                                   # Admin — setup (HIT
 | Command | Role | Output | HITL | Backend |
 |---------|------|--------|------|---------|
 | `tg-proxy admin setup` | First-time auth — web form in browser (API ID + Hash + Phone) | Interactive (web) | ✅ HITL | Telethon |
-| `tg-proxy admin status` | Your identity (id, name, username, phone, premium) | JSON | ❌ | Telethon |
+| `tg-proxy admin status` | Identity + local diagnostics: API ID, masked secrets/tokens, session and permission state | JSON | ❌ | Telethon |
+| `tg-proxy admin reset` | Remove local credentials and session, retaining the secured config directory | JSON | ✅ HITL | Local storage |
+| `tg-proxy admin purge` | Remove local configuration; reports the explicit final CLI uninstall command | JSON | ✅ HITL | Local storage |
 
 ### `tg-proxy do` — RPC Actions (JSON default, can switch to table via `--format/-f`)
 
@@ -83,13 +85,13 @@ If HITL was involved, `meta.comment` contains the user's comment (empty if none)
 Created by `tg-proxy admin setup` (HITL required). Written to `~/.config/tg-proxy/.env`:
 
 ```env
-TG_API_ID=32750118
-TG_API_HASH=df796e5e2c4f045ae51eba5de68335f7
+TG_API_ID=your_api_id_here
+TG_API_HASH=your_api_hash_here
 ```
 
 **No `config.yaml`.** **No per-bot `TELEGRAM_*_TOKEN`.** **No cache.** **No magic.**
 
-- `TG_API_ID` and `TG_API_HASH` are the ONLY needed secrets.
+- `TG_API_ID`, `TG_API_HASH`, and BotFather-retrieved `*_TOKEN` entries are sensitive local values.
 - Bot tokens are retrieved from BotFather on demand via HITL (not cached).
 - `bot-token` writes tokens to a `.env` file via `--output-file/-o` (file MUST end in `.env`).
 
@@ -111,7 +113,7 @@ tg-proxy
 │  ├── models.py               │  Pydantic models (ts_proxy style)
 │  ├── display.py              │  Rich output helpers
 │  ├── config.py               │  ~/.config/tg-proxy/.env loader
-│  ├── logger.py               │  Rotating file logger (ts_proxy)
+│  ├── logger.py               │  stderr logger for terminal and journald capture
 │  ├── exceptions.py           │  Base exception (ts_proxy)
 │  ├── doc.py                  │  Dynamic --help injection (ts_proxy)
 │  └── hitl.py                 │  Web UI for HITL (adapted ts_proxy)
@@ -119,8 +121,8 @@ tg-proxy
        │
        ▼
 ┌──────────────────────────────┐
-│  ~/.config/tg-proxy/.env     │  TG_API_ID + TG_API_HASH
-│  ~/.config/tg/user.session   │  Telethon session
+│  ~/.config/tg-proxy/.env     │  API credentials + bot tokens (0600)
+│  ~/.config/tg-proxy/user.session │  Telethon session (0600)
 └──────────────────────────────┘
 ```
 
@@ -191,21 +193,17 @@ Examples:
 | `src/tg/models.py` | Pydantic models (ts_proxy style) |
 | `src/tg/config.py` | Minimal `.env` loader (dotenv or manual) |
 | `src/tg/display.py` | 🟢 Gardé (Rich helpers) |
-| `src/tg/logger.py` | 🆕 Rotating file logger (ts_proxy style) |
+| `src/tg/logger.py` | 🆕 stderr logger (ts_proxy style) |
 | `src/tg/exceptions.py` | 🆕 Base exception class (ts_proxy style) |
 | `src/tg/doc.py` | 🆕 Dynamic `--help` injection (ts_proxy style) |
 | `pyproject.toml` | Single entry point: `tg-proxy = "tg.cli:app"` |
 | `.env.example` | Only: `TG_API_ID=`, `TG_API_HASH=` |
 
-### ADD (infrastructure — adapted from ts_proxy)
+### ADD (local development infrastructure — adapted from ts_proxy)
 | File | Source |
 |------|--------|
 | `Makefile` | ts_proxy |
-| `Dockerfile` | ts_proxy |
-| `docker-compose.yml` | ts_proxy |
-| `.gitlab-ci.yml` | ts_proxy |
 | `.gitignore` | ts_proxy |
-| `.dockerignore` | ts_proxy |
 | `scripts/install.sh` | ts_proxy |
 | `scripts/uninstall.sh` | ts_proxy |
 | `scripts/audit_infra.py` | ts_proxy |
@@ -227,10 +225,7 @@ Examples:
 | `uv-publish` | `uv publish` |
 | `git-push` | Push to gitlab + github |
 | `git-install-hooks` | Pre-commit: `make check` |
-| `release` | check → git-push → uv-publish → docker-publish |
-| `docker-build` | Build image |
-| `docker-publish` | Push image |
-| `docker-logs` | Container logs |
+| `release` | check → git-push → uv-publish |
 
 ---
 
@@ -276,7 +271,7 @@ Examples:
    }
 ```
 
-**HITL operations:** `admin setup`, `bot-token`, `bot-create`, `bot-delete`, `bot-send`, `bot-send-file`.
+**HITL operations:** `admin setup`, `admin reset`, `admin purge`, `bot-token`, `bot-create`, `bot-delete`, `bot-send`, `bot-send-file`.
 
 **No HITL (read-only):** `bot-list`, `bot-info`, `chat-list`, `chat-read`, `updates`, `webhook-get`, `webhook-set`, `webhook-del`.
 

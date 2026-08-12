@@ -1,6 +1,6 @@
 [project]
 name = "tg-proxy"
-version = "1.1.1"
+version = "1.2.0"
 description = "Telegram administrative proxy — RPC CLI for bot and user management"
 requires-python = ">=3.12"
 dependencies = [

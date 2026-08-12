@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.2.0 (2026-08-12)
+
+### Admin lifecycle and local credential hardening
+
+- **Admin parity:** added HITL-protected `tg-proxy admin reset` (removes `.env` and the local
+  Telethon session while retaining the secured config directory) and `admin purge` (removes the
+  configuration directory and prints the explicit final `uv tool uninstall tg-proxy` step instead
+  of uninstalling the running process).
+- **Detailed status:** `admin status` now follows the `tick-proxy` diagnostics contract: unmasked
+  Telegram API ID, masked API hash and each stored bot token, binary path, session presence, and
+  per-path `{path, mode, status, fix}` records for the configuration directory, `.env`, and
+  `user.session`. Authorization failures remain a JSON warning and do not hide local diagnostics.
+- **Permission invariants:** setup creates the configuration directory at `0700`, writes `.env` at
+  `0600`, protects `user.session` at `0600`, and every BotFather token write preserves those modes.
+  `.env.example` documents the managed keys and the permission policy.
+- **Delivery simplification:** removed the untested container and external CI files, Makefile targets,
+  and all project-owned documentation/source references. Releases are now `check → git-push →
+  uv-publish` only.
+
 ## 1.1.1 (2026-08-09)
 
 ### Truth-in-documentation pass: version desync + HITL port docs corrected

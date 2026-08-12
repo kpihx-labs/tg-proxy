@@ -4,7 +4,7 @@
 
 tg-proxy is a Telegram administrative proxy — a single binary with two namespaces:
 - `tg-proxy do <action> [payload]` — RPC operations (flat, pure JSON-RPC)
-- `tg-proxy admin setup|status` — Admin operations (always JSON)
+- `tg-proxy admin setup|status|reset|purge` — Admin operations (always JSON)
 
 ## Key Files
 
@@ -15,7 +15,7 @@ tg-proxy is a Telegram administrative proxy — a single binary with two namespa
 | `src/tg_proxy/models.py` | Pydantic RPC payloads |
 | `src/tg_proxy/config.py` | .env loader (~/.config/tg-proxy/.env) |
 | `src/tg_proxy/display.py` | Rich output helpers, table formatting |
-| `src/tg_proxy/logger.py` | Rotating file logger |
+| `src/tg_proxy/logger.py` | stderr logger for terminal and journald capture |
 | `src/tg_proxy/exceptions.py` | Base exception class |
 | `src/tg_proxy/hitl.py` | HITL web UI |
 | `src/tg_proxy/doc.py` | Dynamic --help injection |
@@ -25,10 +25,13 @@ tg-proxy is a Telegram administrative proxy — a single binary with two namespa
 
 ## Config
 
-`~/.config/tg-proxy/.env` — only contains `TG_API_ID` and `TG_API_HASH`.
-Created by `tg-proxy admin setup` (HITL web form).
+`~/.config/tg-proxy/.env` — contains `TG_API_ID`, `TG_API_HASH`, and BotFather-retrieved
+`*_TOKEN` entries. `tg-proxy admin setup` creates the directory at `0700` and the file at `0600`;
+all token writes preserve that policy. `admin status` shows the API ID, masked secret/token
+inventory plus actual directory, file and session modes with a corrective command when a mode is
+wrong.
 
-No config.yaml, no per-bot tokens, no cache, no magic.
+No config.yaml or cache; bot tokens are stored only in the protected local `.env`.
 
 ## Bot Discovery
 
@@ -48,7 +51,7 @@ Meta options (only for do): `--output-file/-o <path>`, `--format/-f json|table`,
 
 ## HITL
 
-100% Web UI on an OS-assigned free port (bind to port 0 — printed with the review URL, never fixed, so concurrent `do` invocations cannot collide). Required for: admin setup, bot-token, bot-create, bot-delete, bot-send, bot-send-file.
+100% Web UI on an OS-assigned free port (bind to port 0 — printed with the review URL, never fixed, so concurrent `do` invocations cannot collide). Required for: admin setup/reset/purge, bot-token, bot-create, bot-delete, bot-send, bot-send-file.
 
 ## Output
 

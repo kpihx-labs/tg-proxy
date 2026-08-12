@@ -41,6 +41,8 @@ TEMPLATE_PATH = Path(__file__).parent / "templates" / "hitl.html"
 
 HITL_REQUIRED_OPERATIONS = [
     "admin_setup",
+    "admin_reset",
+    "admin_purge",
     "bot_token",
     "bot_create",
     "bot_delete",

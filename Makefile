@@ -15,7 +15,7 @@ PYTEST := $(PYTHON) -m pytest
 
 PY_FILES := $(shell find $(PKG_DIR) -name "*.py")
 
-.PHONY: help check uv-install uv-link uv-uninstall uv-purge uv-build uv-publish git-push release docker-build docker-publish docker-logs git-install-hooks
+.PHONY: help check uv-install uv-link uv-uninstall uv-purge uv-build uv-publish git-push release git-install-hooks
 
 help: ## Show help
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*##"}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -78,16 +78,4 @@ git-install-hooks: ## Install pre-commit hook
 
 # ─── Release ───
 
-release: check git-push uv-publish docker-publish ## Full release: check → push → publish → docker
-
-# ─── Docker ───
-
-docker-build: ## Build Docker image
-	@echo "🐳 Building Docker image kpihx/$(PKG_NAME)..."
-	@docker build -t kpihx/$(PKG_NAME):latest .
-
-docker-publish: ## Push Docker image
-	@docker push kpihx/$(PKG_NAME):latest
-
-docker-logs: ## View logs
-	@docker logs tg-proxy 2>/dev/null || echo "No container running"
+release: check git-push uv-publish ## Full release: check → push → publish

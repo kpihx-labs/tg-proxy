@@ -1,7 +1,7 @@
 """
 System logger for tg-proxy — logs to stderr for systemd/journald capture.
 
-No file management: systemd (or Docker) handles log rotation and retention.
+No file management: systemd/journald handles log rotation and retention.
 """
 
 import logging
@@ -15,7 +15,6 @@ def setup_logging(level: str = "WARNING"):
 
     In a terminal → visible on stderr (not mixed with stdout JSON).
     In a systemd service → captured by journalctl.
-    In Docker → captured by docker logs.
     """
     logger.setLevel(getattr(logging, level.upper(), logging.WARNING))
 

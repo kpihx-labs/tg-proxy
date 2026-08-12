@@ -22,7 +22,7 @@ from pydantic import ValidationError
 
 from . import __version__
 from .client import TgClient
-from .config import ensure_env
+from .config import config_status, ensure_env, purge_storage, reset_storage
 from .display import (
     console,
     print_error,
@@ -65,7 +65,7 @@ app = typer.Typer(
     help="Telegram administrative proxy — RPC CLI for bot and user management.",
     add_completion=False,
 )
-app_admin = typer.Typer(help="Admin commands: setup, status.")
+app_admin = typer.Typer(help="Admin commands: setup, status, reset, purge.")
 
 
 app_do = typer.Typer(
@@ -230,11 +230,103 @@ async def _do_admin_setup(api_id: str, api_hash: str, phone: str) -> dict:
 
 @app_admin.command("status")
 def admin_status():
-    """Your Telegram identity (ALWAYS JSON)."""
-    client = get_client()
-    result = run_async(client.admin_status())
-    _close_client(client)
-    print_json(data={"meta": {"status": "ok"}, "data": result})
+    """Report Telegram identity, stored token presence and sensitive-path permissions."""
+    result = config_status()
+    try:
+        client = get_client()
+        result.update(run_async(client.admin_status()))
+        _close_client(client)
+        status = "ok"
+    except (TgProxyError, OSError, ValueError) as exc:
+        result["authorization"] = {"status": "unavailable", "reason": str(exc)}
+        status = "warning"
+    print_json(
+        data={
+            "meta": {"status": status, "comment": "", "edited": False},
+            "data": result,
+        }
+    )
+
+
+@app_admin.command("reset")
+def admin_reset():
+    """Delete stored credentials and the local Telegram session after HITL approval."""
+
+    async def _run():
+        from .hitl import request_approval
+
+        response = await request_approval(
+            "admin reset",
+            {
+                "action": "delete_credentials_and_session",
+                "config_file": str(config_status()["config"]),
+                "session_file": str(
+                    config_status()["permissions"]["session_file"]["path"]
+                ),
+                "confirm": "Yes, delete credentials and the Telegram session",
+            },
+        )
+        if response.status == "rejected":
+            return {
+                "meta": {
+                    "status": "rejected",
+                    "comment": response.comment,
+                    "edited": response.edited,
+                },
+                "data": None,
+            }
+        return {
+            "meta": {
+                "status": response.status,
+                "comment": response.comment,
+                "edited": response.edited,
+            },
+            "data": {"status": "reset", **reset_storage()},
+        }
+
+    print_json(data=run_async(_run()))
+
+
+@app_admin.command("purge")
+def admin_purge():
+    """Remove local configuration after HITL approval; print final tool-uninstall command."""
+
+    async def _run():
+        from .hitl import request_approval
+
+        response = await request_approval(
+            "admin purge",
+            {
+                "action": "delete_config_and_uninstall",
+                "config_dir": config_status()["permissions"]["config_dir"]["path"],
+                "uninstalled_tool": "tg-proxy",
+                "confirm": "Yes, delete configuration and uninstall the CLI",
+            },
+        )
+        if response.status == "rejected":
+            return {
+                "meta": {
+                    "status": "rejected",
+                    "comment": response.comment,
+                    "edited": response.edited,
+                },
+                "data": None,
+            }
+        return {
+            "meta": {
+                "status": response.status,
+                "comment": response.comment,
+                "edited": response.edited,
+            },
+            "data": {
+                "status": "purged",
+                "config_dir_deleted": purge_storage(),
+                "uninstalled": False,
+                "note": "Configuration removed. To fully uninstall the CLI, run: uv tool uninstall tg-proxy",
+            },
+        }
+
+    print_json(data=run_async(_run()))
 
 
 # ═══════════════════════════════════════════════════

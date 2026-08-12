@@ -19,7 +19,17 @@ from telethon.tl.types import (
     TextWithEntities,
 )
 
-from .config import get_api_credentials
+from .config import (
+    ENV_PATH,
+    FILE_PERMISSIONS,
+    SESSION_PATH,
+    append_env,
+    config_status,
+    ensure_secure_storage,
+    get_api_credentials,
+    read_env,
+    write_env,
+)
 from .exceptions import TgProxyError
 from .hitl import require_approval
 from .models import (
@@ -198,21 +208,31 @@ class TgClient:
         api_id = int(payload["api_id"])
         api_hash = payload["api_hash"]
         phone = payload["phone"]
-        TG_DATA_DIR.mkdir(parents=True, exist_ok=True)
+        ensure_secure_storage()
         client = TelegramClient(  # type: ignore[reportGeneralTypeIssues]
-            str(TG_DATA_DIR / "user.session"), api_id, api_hash
+            str(SESSION_PATH), api_id, api_hash
         )
         await client.start(phone=phone)  # type: ignore[reportGeneralTypeIssues]
         me = await client.get_me()
         await client.disconnect()  # type: ignore[reportGeneralTypeIssues]
-        env_path = TG_DATA_DIR / ".env"
+        SESSION_PATH.chmod(FILE_PERMISSIONS)
         await asyncio.to_thread(
-            env_path.write_text, f"TG_API_ID={api_id}\nTG_API_HASH={api_hash}\n"
+            write_env,
+            {
+                **{
+                    key: value
+                    for key, value in read_env().items()
+                    if key.endswith("_TOKEN")
+                },
+                "TG_API_ID": str(api_id),
+                "TG_API_HASH": api_hash,
+            },
         )
         return {
             "id": me.id,
             "username": me.username or "",
             "first_name": me.first_name or "",
+            **config_status(),
         }
 
     # ─── admin status ───
@@ -458,7 +478,6 @@ class TgClient:
             - Note: bot-token does NOT accept --output-file or --format.
         """
         c = await self._telethon()
-        env_path = TG_DATA_DIR / ".env"
         written = []
         for username in payload.bots:
             clean = username.lstrip("@")
@@ -478,13 +497,9 @@ class TgClient:
             if token:
                 key = clean.upper().replace("@", "") + "_TOKEN"
 
-                def _append_env(p=env_path, k=key, t=token):
-                    with p.open("a") as f:
-                        f.write(f"{k}={t}\n")
-
-                await asyncio.to_thread(_append_env)
+                await asyncio.to_thread(append_env, key, token)
                 written.append({"username": clean, "key": key})
-        return {"appended_to": str(env_path), "bots": written, "note": BF_NOTE}
+        return {"appended_to": str(ENV_PATH), "bots": written, "note": BF_NOTE}
 
     # ─── do bot-create (HITL, max privacy) ───
 

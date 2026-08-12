@@ -7,7 +7,7 @@ Telegram administrative proxy — RPC CLI for bot and user management.
 Single binary with two namespaces:
 
 ```bash
-tg-proxy admin setup|status          # Admin operations (always JSON)
+tg-proxy admin setup|status|reset|purge  # Admin operations (always JSON)
 tg-proxy do <action> [payload|file]  # RPC actions (JSON default, table via --format)
 ```
 
@@ -16,7 +16,9 @@ tg-proxy do <action> [payload|file]  # RPC actions (JSON default, table via --fo
 | Command | Description |
 |---------|-------------|
 | `setup` | First-time auth via HITL web form (creates `~/.config/tg-proxy/.env`) |
-| `status` | Your Telegram identity as JSON |
+| `status` | Telegram identity, masked token inventory, session health and path permissions |
+| `reset` | HITL-protected removal of credentials and the local Telethon session |
+| `purge` | HITL-protected removal of the configuration directory; prints final CLI uninstall command |
 
 ### `tg-proxy do` (RPC) — 24 commands
 
@@ -122,22 +124,27 @@ Reference: https://t.me/botfather
 Single `.env` at `~/.config/tg-proxy/.env`:
 
 ```env
-TG_API_ID=32750118
-TG_API_HASH=df796e5e2c4f045ae51eba5de68335f7
+TG_API_ID=your_api_id_here
+TG_API_HASH=your_api_hash_here
 ```
 
-Created by `tg-proxy admin setup` (HITL web form).
+Created by `tg-proxy admin setup` (HITL web form). Bot tokens retrieved through
+`tg-proxy do bot-token` are stored in this file as `BOT_USERNAME_TOKEN` entries.
 
 ## Security
 
-The configuration directory and its files contain sensitive API credentials and a Telethon session file. Protect them after `tg-proxy admin setup`:
+The configuration directory and its files contain sensitive API credentials, bot tokens and a
+Telethon session file. `tg-proxy admin setup` and token writes enforce these permissions:
 
 ```bash
 chmod 700 ~/.config/tg-proxy
 chmod 600 ~/.config/tg-proxy/.env ~/.config/tg-proxy/user.session
 ```
 
-On first-time setup, verify the permissions:
+`tg-proxy admin status` reports the unmasked Telegram API ID, masked API hash and bot-token
+inventory, plus the actual mode, state and corrective command for the directory, `.env` and
+`user.session`; it never exposes raw secret values.
+For a manual repair, use the displayed `chmod` command.
 
 ```bash
 ls -la ~/.config/tg-proxy/
@@ -179,15 +186,6 @@ uv tool install .
 
 ```bash
 uv tool install --editable .
-```
-
-### Docker (not yet tested)
-
-⚠️ The Docker build and runtime have not been end-to-end tested yet. Use `uv tool install` for production.
-
-```bash
-make docker-build
-docker run --rm kpihx/tg-proxy --help
 ```
 
 ## Development
