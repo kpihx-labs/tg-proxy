@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.2.1 (2026-08-15)
+
+### KπX naming-convention alignment
+
+- **Repo root renamed** `tg_proxy` → `tg-proxy` (kebab-case, matching the KπX `xxx-yyy`
+  project-root convention) and moved under `~/KpihX-Labs/proxies/`. The Python package inside
+  `src/` remains `tg_proxy` (underscore, as required) and `pyproject.toml` `name = "tg-proxy"`
+  was already correct — no code or packaging change needed.
+- **Config dir confirmed aligned:** every reference points to `~/.config/tg-proxy/` (hyphen) —
+  `src/tg_proxy/config.py` (`CONFIG_DIR`), `src/tg_proxy/client.py` (`TG_DATA_DIR`), docstrings,
+  README, AGENTS.md and the tests (which use `tmp_path / "tg-proxy"`). No `~/.tg_proxy` or
+  `~/.config/tg_proxy` underscore variant remains.
+- **Fixed stale editable install:** the installed `tg-proxy` binary was broken
+  (`ModuleNotFoundError: No module named 'tg_proxy'`) because the uv-tool receipt still pointed at
+  the pre-move editable path. Reinstalled as a regular install
+  (`uv tool uninstall` + `make uv-install`); `tg-proxy --version` now reports `1.2.1` and the
+  binary resolves to `~/.local/share/uv/tools/tg-proxy/`.
+- **Verified:** `make check` → ruff 0 errors, pyright 0 errors, CLI smoke passed, 28/28 tests green.
+
 ## 1.2.0 (2026-08-12)
 
 ### Admin lifecycle and local credential hardening
